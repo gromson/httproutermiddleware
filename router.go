@@ -8,12 +8,15 @@ import (
 // Middleware wraps the next handler
 type Middleware func(next httprouter.Handle) httprouter.Handle
 
+// Pipeline
+type Pipeline []Middleware
+
 // httprouter.Router wrapper
 type Router struct {
 	// Groups
-	Groups []Group
+	Groups Groups
 	// Routes
-	Routes []Route
+	Routes Routes
 	*httprouter.Router
 }
 

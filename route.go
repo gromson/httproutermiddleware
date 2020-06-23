@@ -2,6 +2,9 @@ package httprouter_middleware
 
 import "github.com/julienschmidt/httprouter"
 
+// Routes
+type Routes []Route
+
 // Route struct for representing a route
 type Route struct {
 	// Path
@@ -11,7 +14,7 @@ type Route struct {
 	// Method verb
 	Method string
 	// Set of middlewares to be applied to the routes
-	Pipeline []Middleware
+	Pipeline Pipeline
 }
 
 func (r *Route) wrap() httprouter.Handle {
