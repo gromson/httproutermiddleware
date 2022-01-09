@@ -2,43 +2,55 @@ package httprouter_middleware
 
 import (
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 )
 
 // Middleware wraps the next handler
 type Middleware func(next httprouter.Handle) httprouter.Handle
 
-// Pipeline
+// Pipeline the pipeline of middlawares
 type Pipeline []Middleware
 
-// httprouter.Router wrapper
-type Router struct {
+type Config struct {
 	// Groups
 	Groups Groups
 	// Routes
 	Routes Routes
+}
+
+// Router wrapper for httprouter.Router
+type Router struct {
 	*httprouter.Router
 }
 
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.apply()
-	r.Router.ServeHTTP(w, req)
+func NewDefaultRouter(c *Config) *Router {
+	r := httprouter.New()
+	router := &Router{r}
+	router.Apply(c)
+
+	return router
 }
 
-func (r *Router) apply() {
-	r.applyRoutes()
-	r.applyGroups()
+func New(r *httprouter.Router, c *Config) *Router {
+	router := &Router{r}
+	router.Apply(c)
+
+	return router
 }
 
-func (r *Router) applyRoutes() {
-	for _, route := range r.Routes {
+func (r *Router) Apply(c *Config) {
+	r.applyRoutes(c)
+	r.applyGroups(c)
+}
+
+func (r *Router) applyRoutes(c *Config) {
+	for _, route := range c.Routes {
 		h := route.wrap()
 		r.Handle(route.Method, route.Path, h)
 	}
 }
 
-func (r *Router) applyGroups() {
-	for _, group := range r.Groups {
+func (r *Router) applyGroups(c *Config) {
+	for _, group := range c.Groups {
 		group.apply(r)
 	}
 }
