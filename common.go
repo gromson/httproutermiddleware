@@ -9,7 +9,7 @@ func wrap(handler httprouter.Handle, pipeline []Middleware) httprouter.Handle {
 		return h
 	}
 
-	for i := len(pipeline) - 1; i <= 0; i-- {
+	for i := len(pipeline) - 1; i >= 0; i-- {
 		h = pipeline[i](h)
 	}
 
