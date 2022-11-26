@@ -1,9 +1,8 @@
 package httprouter_middleware
 
-// Groups
 type Groups []Group
 
-// Group struct represents a group of routes. Pipeline middlewares will be applied to all routes in the group
+// Group struct represents a group of routes. Pipeline middlewares will be applied to all routes in the group.
 type Group struct {
 	// Routes in the group
 	Routes []Route
@@ -11,9 +10,12 @@ type Group struct {
 	Pipeline Pipeline
 }
 
-func (g *Group) apply(r *Router) {
+func (g *Group) apply(router *Router, commonPipeline Pipeline) {
 	for _, route := range g.Routes {
-		h := wrap(route.wrap(), g.Pipeline)
-		r.Handle(route.Method, route.Path, h)
+		h := wrap(route.Handler, route.Pipeline)
+		h = wrap(h, g.Pipeline)
+		h = wrap(h, commonPipeline)
+
+		router.Handle(route.Method, route.Path, h)
 	}
 }

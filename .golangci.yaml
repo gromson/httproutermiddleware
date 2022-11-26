@@ -1,0 +1,15 @@
+run:
+  go: '1.14'
+linters:
+  enable-all: true
+  disable:
+    - structcheck
+    - interfacer
+    - deadcode
+    - ifshort
+    - varcheck
+    - nosnakecase
+    - scopelint
+    - maligned
+    - golint
+    - exhaustivestruct
