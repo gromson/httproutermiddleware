@@ -1,4 +1,4 @@
-package httprouter_middleware
+package httproutermiddleware
 
 type Groups []Group
 

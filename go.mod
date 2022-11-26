@@ -1,4 +1,4 @@
-module github.com/gromson/httprouter-middleware
+module github.com/gromson/httproutermiddleware
 
 go 1.14
 

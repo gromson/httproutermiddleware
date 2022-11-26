@@ -1,4 +1,4 @@
-package httprouter_middleware
+package httproutermiddleware
 
 import (
 	"github.com/julienschmidt/httprouter"
