@@ -53,8 +53,10 @@ func testGroupedRoute(t *testing.T) {
 	t.Parallel()
 
 	config := &mw.Config{
+		BasePath: "/api",
 		Groups: mw.Groups{
 			mw.Group{
+				Path: "/group",
 				Routes: mw.Routes{
 					mw.Route{
 						Path:    "/route",
@@ -79,7 +81,7 @@ func testGroupedRoute(t *testing.T) {
 	}
 
 	// Act & Assert
-	executeAndAssert(t, config, "/route", "global global2 group group2 route route2")
+	executeAndAssert(t, config, "/api/group/route", "global global2 group group2 route route2")
 }
 
 func testNoPipeline(t *testing.T) {
@@ -87,6 +89,7 @@ func testNoPipeline(t *testing.T) {
 	t.Parallel()
 
 	config := &mw.Config{
+		BasePath: "/api",
 		Routes: mw.Routes{
 			mw.Route{
 				Path:    "/route",
@@ -97,7 +100,7 @@ func testNoPipeline(t *testing.T) {
 	}
 
 	// Act & Assert
-	executeAndAssert(t, config, "/route", "null")
+	executeAndAssert(t, config, "/api/route", "null")
 }
 
 func executeAndAssert(t *testing.T, config *mw.Config, route, expectedValue string) {

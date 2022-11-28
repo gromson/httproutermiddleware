@@ -11,6 +11,7 @@ type Middleware func(next httprouter.Handle) httprouter.Handle
 type Pipeline []Middleware
 
 type Config struct {
+	BasePath string
 	Groups   Groups
 	Routes   Routes
 	Pipeline Pipeline
@@ -44,12 +45,12 @@ func (r *Router) applyRoutes(c *Config) {
 		h := wrap(route.Handler, route.Pipeline)
 		h = wrap(h, c.Pipeline)
 
-		r.Handle(route.Method, route.Path, h)
+		r.Handle(route.Method, c.BasePath+route.Path, h)
 	}
 }
 
 func (r *Router) applyGroups(c *Config) {
 	for _, group := range c.Groups {
-		group.apply(r, c.Pipeline)
+		group.apply(r, c)
 	}
 }
