@@ -1,4 +1,4 @@
-package httproutermiddleware
+package httproutermiddleware_test
 
 import (
 	"context"
@@ -7,10 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	mw "github.com/gromson/httproutermiddleware"
 	"github.com/julienschmidt/httprouter"
 )
 
-const contextValueKey = "test"
+type cxtKey int
+
+const ctxTestKey cxtKey = iota
 
 func TestRouter_Apply(t *testing.T) {
 	t.Parallel()
@@ -21,19 +24,21 @@ func TestRouter_Apply(t *testing.T) {
 
 func testStandaloneRoute(t *testing.T) {
 	// Arrange
-	config := &Config{
-		Routes: Routes{
-			Route{
+	t.Parallel()
+
+	config := &mw.Config{
+		Routes: mw.Routes{
+			mw.Route{
 				Path:    "/route",
 				Handler: handler,
 				Method:  "GET",
-				Pipeline: Pipeline{
+				Pipeline: mw.Pipeline{
 					routeMiddleware,
 					routeMiddleware2,
 				},
 			},
 		},
-		Pipeline: Pipeline{
+		Pipeline: mw.Pipeline{
 			globalMiddleware,
 			globalMiddleware2,
 		},
@@ -45,27 +50,29 @@ func testStandaloneRoute(t *testing.T) {
 
 func testGroupedRoute(t *testing.T) {
 	// Arrange
-	config := &Config{
-		Groups: Groups{
-			Group{
-				Routes: Routes{
-					Route{
+	t.Parallel()
+
+	config := &mw.Config{
+		Groups: mw.Groups{
+			mw.Group{
+				Routes: mw.Routes{
+					mw.Route{
 						Path:    "/route",
 						Handler: handler,
 						Method:  "GET",
-						Pipeline: Pipeline{
+						Pipeline: mw.Pipeline{
 							routeMiddleware,
 							routeMiddleware2,
 						},
 					},
 				},
-				Pipeline: Pipeline{
+				Pipeline: mw.Pipeline{
 					groupMiddleware,
 					groupMiddleware2,
 				},
 			},
 		},
-		Pipeline: Pipeline{
+		Pipeline: mw.Pipeline{
 			globalMiddleware,
 			globalMiddleware2,
 		},
@@ -77,9 +84,11 @@ func testGroupedRoute(t *testing.T) {
 
 func testNoPipeline(t *testing.T) {
 	// Arrange
-	config := &Config{
-		Routes: Routes{
-			Route{
+	t.Parallel()
+
+	config := &mw.Config{
+		Routes: mw.Routes{
+			mw.Route{
 				Path:    "/route",
 				Handler: handler,
 				Method:  "GET",
@@ -91,9 +100,12 @@ func testNoPipeline(t *testing.T) {
 	executeAndAssert(t, config, "/route", "null")
 }
 
-func executeAndAssert(t *testing.T, config *Config, route, expectedValue string) {
+func executeAndAssert(t *testing.T, config *mw.Config, route, expectedValue string) {
 	// Arrange
-	router := NewDefaultRouter(config)
+	t.Helper()
+
+	router := mw.NewDefaultRouter(config)
+
 	srv := httptest.NewServer(router)
 	defer srv.Close()
 
@@ -103,27 +115,28 @@ func executeAndAssert(t *testing.T, config *Config, route, expectedValue string)
 		t.Fatal("Could not get a response from the route")
 	}
 
-	b, err := ioutil.ReadAll(res.Body)
+	bodyData, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Could not read a response body")
 	}
+
 	_ = res.Body.Close()
 
 	// Assert
-	if string(b) != expectedValue {
-		t.Fatalf(`Expected response body from /route: "%s", "%s" given`, expectedValue, b)
+	if string(bodyData) != expectedValue {
+		t.Fatalf(`Expected response body from /route: "%s", "%s" given`, expectedValue, bodyData)
 	}
 }
 
-func handler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	value := r.Context().Value(contextValueKey)
+func handler(writer http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	value := req.Context().Value(ctxTestKey)
 
 	if value == nil {
 		value = "null"
 	}
 
-	if _, err := w.Write([]byte(value.(string))); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if _, err := writer.Write([]byte(value.(string))); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -163,13 +176,15 @@ func routeMiddleware2(next httprouter.Handle) httprouter.Handle {
 	}
 }
 
-func getRequestWithUpdatedContext(r *http.Request, val string) *http.Request {
+func getRequestWithUpdatedContext(req *http.Request, val string) *http.Request {
 	newVal := val
-	ctx := r.Context()
-	ctxVal := ctx.Value(contextValueKey)
+	ctx := req.Context()
+
+	ctxVal := ctx.Value(ctxTestKey)
 	if ctxVal != nil {
-		newVal = ctxVal.(string) + " " + val
+		ctxValStr, _ := ctxVal.(string)
+		newVal = ctxValStr + " " + val
 	}
 
-	return r.WithContext(context.WithValue(ctx, contextValueKey, newVal))
+	return req.WithContext(context.WithValue(ctx, ctxTestKey, newVal))
 }
